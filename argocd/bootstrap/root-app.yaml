@@ -56,6 +56,10 @@ spec:
     kind: CustomResourceDefinition
   - group: 'networking.k8s.io'
     kind: IngressClass
+  - group: 'admissionregistration.k8s.io'
+    kind: ValidatingWebhookConfiguration
+  - group: 'admissionregistration.k8s.io'
+    kind: MutatingWebhookConfiguration
   namespaceResourceWhitelist:
   - group: ''
     kind: ConfigMap
