@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world
+  namespace: demo
+  labels:
+    app: hello-world
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-world
+        image: nginx:1.25-alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: hello-world-content
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world
+  namespace: demo
+  labels:
+    app: hello-world
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: hello-world
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-world-content
+  namespace: demo
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Linode Kubernetes Cluster</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                text-align: center; 
+                margin: 50px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .container { 
+                background: rgba(255,255,255,0.1); 
+                padding: 40px; 
+                border-radius: 10px; 
+                backdrop-filter: blur(10px);
+            }
+            .cost-info { 
+                margin-top: 30px; 
+                padding: 20px; 
+                background: rgba(0,0,0,0.2); 
+                border-radius: 5px; 
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🎉 Welcome to Your Linode Kubernetes Cluster!</h1>
+            <p>This application was deployed using ArgoCD's App of Apps pattern</p>
+            
+            <div class="cost-info">
+                <h3>💰 Cluster Cost Optimization</h3>
+                <p><strong>Node Type:</strong> g6-nanode-1 (1GB RAM, 1 CPU)</p>
+                <p><strong>Monthly Cost:</strong> ~$15/month for 3 nodes</p>
+                <p><strong>Perfect for:</strong> Development, testing, learning Kubernetes</p>
+            </div>
+            
+            <h3>🚀 What's Running:</h3>
+            <ul style="text-align: left; display: inline-block;">
+                <li>ArgoCD (GitOps Management)</li>
+                <li>NGINX Ingress Controller</li>
+                <li>Cert-Manager (SSL Certificates)</li>
+                <li>This Hello World App</li>
+            </ul>
+            
+            <p style="margin-top: 30px;">
+                <em>Deployed with ❤️ using Infrastructure as Code</em>
+            </p>
+        </div>
+    </body>
+    </html>
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-world
+  namespace: demo
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - hello.your-domain.com  # Replace with your domain
+    secretName: hello-world-tls
+  rules:
+  - host: hello.your-domain.com  # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hello-world
+            port:
+              number: 80

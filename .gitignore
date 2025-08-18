@@ -1,0 +1,219 @@
+# =============================================================================
+# Infrastructure as Code .gitignore
+# Covers Terraform, Kubernetes, ArgoCD, Python, and general files
+# =============================================================================
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+terraform.tfplan
+terraform.tfplan.*
+*.tfplan
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Kubernetes
+kubeconfig.yaml
+kubeconfig
+*.kubeconfig
+kubeconfig-*
+.kube/
+.kubectl_aliases
+
+# ArgoCD
+argocd-*-config.yaml
+argocd-initial-admin-secret
+.argocd/
+
+# Secrets and Credentials (CRITICAL - Never commit these!)
+*secret*
+*credential*
+*token*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.env
+.env.local
+.env.*.local
+secrets/
+credentials/
+private/
+ssl/
+
+# Generated Reports and Artifacts
+reports/
+*.pdf
+*.png
+*.jpg
+*.svg
+cost_structure_*.png
+resource_chart_*.png
+billing_report_*.pdf
+
+# Python (for billing report scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.python-version
+.pyenv
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+.vim/
+.nvim/
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temporary Files
+*.tmp
+*.temp
+temp/
+tmp/
+.tmp/
+*.backup
+*.bak
+*.orig
+
+# Docker
+.dockerignore
+Dockerfile.local
+docker-compose.override.yml
+.docker/
+
+# Atlantis
+.atlantis/
+atlantis.yaml.bak
+atlantis-data/
+
+# Helm
+charts/*/charts/
+*.tgz
+.helm/
+
+# Local Development
+local/
+*.local
+config.local.*
+dev/
+development/
+.dev/
+
+# Cache Directories
+.cache/
+cache/
+node_modules/
+vendor/
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificate Files (except examples)
+*.cert
+!*example*
+!*template*
+
+# Linode specific
+linode_token
+.linode-cli
+
+# Task runner
+.task/
+
+# Backup files from editors
+*~
+*.swp
+*.swo
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Temporary Kubernetes manifests
+k8s-temp/
+manifests-temp/
+generated/

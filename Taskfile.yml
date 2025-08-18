@@ -1,0 +1,107 @@
+version: '3'
+
+tasks:
+  setup:
+    desc: "Setup Kubernetes cluster on Linode"
+    cmds:
+      - scripts/setup-cluster.sh
+    
+  teardown:
+    desc: "Teardown Kubernetes cluster and destroy all resources"
+    cmds:
+      - scripts/teardown-cluster.sh
+  
+  status:
+    desc: "Check cluster status and show cluster information"
+    cmds:
+      - cd terraform && tofu output
+      - echo ""
+      - echo "📊 Cluster Nodes:"
+      - kubectl get nodes --kubeconfig=./kubeconfig.yaml
+      - echo ""
+      - echo "🖥️ System Pods:"
+      - kubectl get pods -n kube-system --kubeconfig=./kubeconfig.yaml
+    
+  plan:
+    desc: "Show what changes would be applied to infrastructure"
+    cmds:
+      - cd terraform && tofu plan
+      
+  apply:
+    desc: "Apply infrastructure changes"
+    cmds:
+      - cd terraform && tofu apply
+      
+  kubectl:
+    desc: "Run kubectl commands with the cluster kubeconfig"
+    cmds:
+      - kubectl --kubeconfig=./kubeconfig.yaml {{.CLI_ARGS}}
+    
+  logs:
+    desc: "View logs from a specific pod"
+    cmds:
+      - kubectl logs {{.CLI_ARGS}} --kubeconfig=./kubeconfig.yaml
+      
+  shell:
+    desc: "Get a shell in a pod"
+    cmds:
+      - kubectl exec -it {{.CLI_ARGS}} --kubeconfig=./kubeconfig.yaml -- /bin/bash
+
+  clean:
+    desc: "Clean up local terraform and kubernetes files"
+    cmds:
+      - rm -f kubeconfig.yaml
+      - rm -f terraform.tfstate*
+      - rm -rf .terraform/
+      - echo "✅ Local files cleaned up"
+
+  fresh:
+    desc: "Get a completely fresh state by destroying cluster and cleaning all files"
+    cmds:
+      - echo "🧹 Getting fresh state..."
+      - echo "1️⃣ Destroying existing cluster (if any)..."
+      - cd terraform && tofu destroy -auto-approve || echo "⚠️  No existing infrastructure to destroy"
+      - echo "2️⃣ Cleaning up all local files..."
+      - rm -f kubeconfig.yaml
+      - rm -f terraform/terraform.tfstate*
+      - rm -rf terraform/.terraform/
+      - echo "3️⃣ Reinitializing Terraform..."
+      - cd terraform && tofu init
+      - echo ""
+      - echo "✅ Fresh state achieved!"
+      - echo "💡 Run 'task setup' to create a new cluster"
+
+  bill:
+    desc: "Generate Linode billing report as bill.pdf"
+    cmds:
+      - uv run scripts/generate_billing_report.py
+
+  install-argocd:
+    desc: "Install ArgoCD with App of Apps pattern"
+    cmds:
+      - scripts/install-argocd.sh
+
+  argocd-ui:
+    desc: "Start port forwarding to ArgoCD UI (https://localhost:8080)"
+    cmds:
+      - echo "🌐 ArgoCD UI will be available at https://localhost:8080"
+      - echo "📋 Username: admin"
+      - echo "🔐 Password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+      - echo "🚀 Starting port forwarding... (Press Ctrl+C to stop)"
+      - kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig=./kubeconfig.yaml
+
+  setup-complete:
+    desc: "Complete cluster setup with ArgoCD and applications"
+    cmds:
+      - task: setup
+      - task: install-argocd
+      - echo ""
+      - echo "🎉 Complete setup finished!"
+      - echo "================================"
+      - echo "✅ Kubernetes cluster running with optimized nodes"
+      - echo "✅ ArgoCD installed with App of Apps pattern"
+      - echo "✅ Sample applications deployed automatically"
+      - echo ""
+      - echo "🌐 Access ArgoCD: task argocd-ui"
+      - echo "📊 Check status: task status"
+      - echo "💰 Cost report: task bill"

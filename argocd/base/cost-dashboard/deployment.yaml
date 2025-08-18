@@ -1,0 +1,257 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cost-monitoring-script
+  namespace: cost-monitoring
+data:
+  check-costs.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "💰 Checking Linode costs at $(date)"
+    
+    # Get current costs using linode-cli
+    if command -v linode-cli &> /dev/null; then
+        BALANCE=$(linode-cli account view --json | jq -r '.[0].balance // 0' 2>/dev/null || echo "0")
+        UNINVOICED=$(linode-cli account view --json | jq -r '.[0].balance_uninvoiced // 0' 2>/dev/null || echo "0")
+        TOTAL=$(echo "$BALANCE + $UNINVOICED" | bc -l 2>/dev/null || echo "0")
+        INSTANCES=$(linode-cli linodes list --json | jq 'length' 2>/dev/null || echo "0")
+        
+        echo "Account Balance: $BALANCE"
+        echo "Uninvoiced Usage: $UNINVOICED" 
+        echo "Total Due: $TOTAL"
+        echo "Active Instances: $INSTANCES"
+        
+        # Create metrics for potential monitoring
+        echo "linode_balance $BALANCE" > /tmp/metrics.txt
+        echo "linode_uninvoiced $UNINVOICED" >> /tmp/metrics.txt
+        echo "linode_total $TOTAL" >> /tmp/metrics.txt
+        echo "linode_instances $INSTANCES" >> /tmp/metrics.txt
+        
+        # Check if costs are reasonable for a development cluster
+        THRESHOLD=25.00
+        if (( $(echo "$TOTAL > $THRESHOLD" | bc -l) )); then
+            echo "⚠️  WARNING: Costs ($TOTAL) exceed development threshold ($THRESHOLD)"
+        else
+            echo "✅ Costs ($TOTAL) within expected range for development"
+        fi
+    else
+        echo "❌ linode-cli not available"
+    fi
+    
+    sleep 3600  # Sleep for 1 hour
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cost-monitoring
+  namespace: cost-monitoring
+spec:
+  schedule: "0 */4 * * *"  # Every 4 hours
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-monitoring
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: cost-monitor
+            image: alpine:3.18
+            command: ["/bin/sh"]
+            args: ["/scripts/check-costs.sh"]
+            env:
+            - name: LINODE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: linode-credentials
+                  key: token
+                  optional: true
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                cpu: 50m
+                memory: 128Mi
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          initContainers:
+          - name: install-tools
+            image: alpine:3.18
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                apk add --no-cache curl jq bc
+                pip3 install --break-system-packages linode-cli || echo "Failed to install linode-cli"
+            volumeMounts:
+            - name: tools
+              mountPath: /usr/local/bin
+          volumes:
+          - name: script
+            configMap:
+              name: cost-monitoring-script
+              defaultMode: 0755
+          - name: tools
+            emptyDir: {}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: linode-credentials
+  namespace: cost-monitoring
+type: Opaque
+stringData:
+  token: "your-linode-token-here"  # This should be managed via external-secrets or sealed-secrets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cost-dashboard
+  namespace: cost-monitoring
+  labels:
+    app: cost-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cost-dashboard
+  template:
+    metadata:
+      labels:
+        app: cost-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: nginx:1.25-alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 5m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: cost-dashboard-content
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cost-dashboard
+  namespace: cost-monitoring
+  labels:
+    app: cost-dashboard
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: cost-dashboard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cost-dashboard-content
+  namespace: cost-monitoring
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Linode Cost Monitoring</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                margin: 20px; 
+                background: #f5f5f5;
+            }
+            .container { 
+                max-width: 800px; 
+                margin: 0 auto; 
+                background: white; 
+                padding: 30px; 
+                border-radius: 10px; 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .metric { 
+                display: inline-block; 
+                margin: 10px; 
+                padding: 20px; 
+                background: #e3f2fd; 
+                border-radius: 5px; 
+                text-align: center; 
+                min-width: 150px;
+            }
+            .cost { background: #f3e5f5; }
+            .instance { background: #e8f5e8; }
+            .warning { background: #fff3e0; color: #f57c00; }
+            .header { text-align: center; color: #1976d2; }
+        </style>
+        <script>
+          function refreshData() {
+            // In a real implementation, this would fetch actual metrics
+            document.getElementById('timestamp').innerText = new Date().toLocaleString();
+          }
+          setInterval(refreshData, 60000); // Refresh every minute
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="header">💰 Linode Cost Monitoring Dashboard</h1>
+            
+            <div class="metric cost">
+                <h3>Monthly Estimate</h3>
+                <h2>~$15.00</h2>
+                <small>3x g6-nanode-1</small>
+            </div>
+            
+            <div class="metric instance">
+                <h3>Active Instances</h3>
+                <h2>3</h2>
+                <small>Kubernetes nodes</small>
+            </div>
+            
+            <div class="metric">
+                <h3>Region</h3>
+                <h2>de-fra-2</h2>
+                <small>Frankfurt</small>
+            </div>
+            
+            <div class="metric warning">
+                <h3>Optimization</h3>
+                <h2>79%</h2>
+                <small>Cost reduction vs standard</small>
+            </div>
+            
+            <h3>💡 Cost Optimization Tips:</h3>
+            <ul>
+                <li>✅ Using cheapest node type (g6-nanode-1)</li>
+                <li>✅ Optimized for development workloads</li>
+                <li>🔍 Monitor for memory pressure on 1GB nodes</li>
+                <li>📊 Consider horizontal scaling vs vertical</li>
+                <li>⏰ Shutdown non-production clusters when not needed</li>
+            </ul>
+            
+            <h3>📊 Resource Monitoring:</h3>
+            <p>This dashboard shows estimated costs based on your cluster configuration.</p>
+            <p>For real-time billing data, the cost monitoring CronJob runs every 4 hours.</p>
+            
+            <p style="text-align: center; margin-top: 30px; color: #666;">
+                <small>Last updated: <span id="timestamp"></span></small>
+            </p>
+        </div>
+        
+        <script>refreshData();</script>
+    </body>
+    </html>

@@ -1,0 +1,26 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is gitignored to prevent committing sensitive data
+
+# Linode API Token (get from https://cloud.linode.com/profile/tokens)
+linode_token = "your-linode-api-token-here"
+
+# Cluster Configuration
+cluster_name = "my-k8s-cluster"
+kubernetes_version = "1.33"
+region = "de-fra-2"  # or us-east, us-west, eu-west, ap-south, etc.
+
+# Tags for resource organization
+tags = ["production", "kubernetes", "terraform"]
+
+# Node Pool Configuration (optimized for cost)
+node_pools = [
+  {
+    type  = "g6-nanode-1"  # 1GB RAM, 1 CPU - cheapest option ($5/month)
+    count = 3              # Minimum for HA Kubernetes cluster
+  }
+]
+
+# Alternative node types:
+# g6-standard-1  # 2GB RAM, 1 CPU - $12/month  
+# g6-standard-2  # 4GB RAM, 2 CPU - $24/month
+# g6-standard-4  # 8GB RAM, 4 CPU - $48/month
