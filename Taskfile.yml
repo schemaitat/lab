@@ -98,6 +98,22 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/prometheus -n monitoring 9090:9090 --kubeconfig=./kubeconfig.yaml
 
+  demo-app:
+    desc: "Start port forwarding to Hello World demo app"
+    cmds:
+      - |
+        echo "Hello World demo app will be available at http://localhost:8081"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/hello-world -n demo 8081:80 --kubeconfig=./kubeconfig.yaml
+
+  cost-dashboard:
+    desc: "Start port forwarding to Cost Dashboard"
+    cmds:
+      - |
+        echo "Cost Dashboard will be available at http://localhost:8082"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig=./kubeconfig.yaml
+
   setup-complete:
     desc: "Complete cluster setup with ArgoCD and applications"
     cmds:
@@ -106,10 +122,16 @@ tasks:
       - echo ""
       - echo "Complete setup finished!"
       - echo "================================"
-      - echo "* Kubernetes cluster running with optimized nodes"
+      - echo "* Kubernetes cluster running with 2GB nodes"
       - echo "* ArgoCD installed with App of Apps pattern"
       - echo "* Sample applications deployed automatically"
       - echo ""
-      - echo "Access ArgoCD with 'task argocd-ui'"
-      - echo "Check status with 'task status'"
-      - echo "Cost report with 'task bill'"
+      - echo "Available UIs:"
+      - echo "* ArgoCD:         'task argocd-ui'       (https://localhost:8080)"
+      - echo "* Prometheus:     'task monitoring-ui'   (http://localhost:9090)"
+      - echo "* Hello World:    'task demo-app'        (http://localhost:8081)"
+      - echo "* Cost Dashboard: 'task cost-dashboard'  (http://localhost:8082)"
+      - echo ""
+      - echo "Other commands:"
+      - echo "* Check status:   'task status'"
+      - echo "* Cost report:    'task bill'"
