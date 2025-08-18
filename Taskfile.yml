@@ -90,6 +90,14 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig=./kubeconfig.yaml
 
+  monitoring-ui:
+    desc: "Start port forwarding to Prometheus UI"
+    cmds:
+      - |
+        echo "Prometheus UI will be available at http://localhost:9090"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/prometheus -n monitoring 9090:9090 --kubeconfig=./kubeconfig.yaml
+
   setup-complete:
     desc: "Complete cluster setup with ArgoCD and applications"
     cmds:
