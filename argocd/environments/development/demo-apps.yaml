@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/yourusername/iac  # Replace with your actual repo URL
+    repoURL: https://github.com/schemaitat/lab.git
     targetRevision: HEAD
     path: argocd/base/hello-world
   destination:
@@ -32,7 +32,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/yourusername/iac  # Replace with your actual repo URL
+    repoURL: https://github.com/schemaitat/lab.git
     targetRevision: HEAD
     path: argocd/base/cost-dashboard
   destination:

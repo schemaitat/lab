@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/yourusername/iac  # Replace with your actual repo URL
+    repoURL: https://github.com/schemaitat/lab.git
     targetRevision: HEAD
     path: argocd/environments/development
   destination:
@@ -36,7 +36,7 @@ metadata:
 spec:
   description: Default project for all applications
   sourceRepos:
-  - 'https://github.com/yourusername/iac'  # Replace with your actual repo URL
+  - 'https://github.com/schemaitat/lab.git'
   - 'https://helm.nginx.com/stable'
   - 'https://prometheus-community.github.io/helm-charts'
   - 'https://grafana.github.io/helm-charts'

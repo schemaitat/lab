@@ -16,10 +16,10 @@ tasks:
     cmds:
       - cd terraform && tofu output
       - echo ""
-      - echo "📊 Cluster Nodes:"
+      - echo "Cluster Nodes:"
       - kubectl get nodes --kubeconfig=./kubeconfig.yaml
       - echo ""
-      - echo "🖥️ System Pods:"
+      - echo "System Pods:"
       - kubectl get pods -n kube-system --kubeconfig=./kubeconfig.yaml
     
   plan:
@@ -51,25 +51,25 @@ tasks:
     desc: "Clean up local terraform and kubernetes files"
     cmds:
       - rm -f kubeconfig.yaml
-      - rm -f terraform.tfstate*
-      - rm -rf .terraform/
-      - echo "✅ Local files cleaned up"
+      - rm -f terraform/terraform.tfstate*
+      - rm -rf terraform/.terraform/
+      - echo "Local files cleaned up"
 
   fresh:
     desc: "Get a completely fresh state by destroying cluster and cleaning all files"
     cmds:
-      - echo "🧹 Getting fresh state..."
-      - echo "1️⃣ Destroying existing cluster (if any)..."
-      - cd terraform && tofu destroy -auto-approve || echo "⚠️  No existing infrastructure to destroy"
-      - echo "2️⃣ Cleaning up all local files..."
+      - echo "Getting fresh state..."
+      - echo "1. Destroying existing cluster (if any)..."
+      - cd terraform && tofu destroy -auto-approve || echo "No existing infrastructure to destroy"
+      - echo "2. Cleaning up all local files..."
       - rm -f kubeconfig.yaml
       - rm -f terraform/terraform.tfstate*
       - rm -rf terraform/.terraform/
-      - echo "3️⃣ Reinitializing Terraform..."
+      - echo "3. Reinitializing Terraform..."
       - cd terraform && tofu init
       - echo ""
-      - echo "✅ Fresh state achieved!"
-      - echo "💡 Run 'task setup' to create a new cluster"
+      - echo "Fresh state achieved!"
+      - echo "Run 'task setup' to create a new cluster"
 
   bill:
     desc: "Generate Linode billing report as bill.pdf"
@@ -82,13 +82,13 @@ tasks:
       - scripts/install-argocd.sh
 
   argocd-ui:
-    desc: "Start port forwarding to ArgoCD UI (https://localhost:8080)"
+    desc: "Start port forwarding to ArgoCD UI"
     cmds:
-      - echo "🌐 ArgoCD UI will be available at https://localhost:8080"
-      - echo "📋 Username: admin"
-      - echo "🔐 Password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
-      - echo "🚀 Starting port forwarding... (Press Ctrl+C to stop)"
-      - kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig=./kubeconfig.yaml
+      - |
+        echo "ArgoCD UI will be available at https://localhost:8080"
+        echo "Username: admin"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig=./kubeconfig.yaml
 
   setup-complete:
     desc: "Complete cluster setup with ArgoCD and applications"
@@ -96,12 +96,12 @@ tasks:
       - task: setup
       - task: install-argocd
       - echo ""
-      - echo "🎉 Complete setup finished!"
+      - echo "Complete setup finished!"
       - echo "================================"
-      - echo "✅ Kubernetes cluster running with optimized nodes"
-      - echo "✅ ArgoCD installed with App of Apps pattern"
-      - echo "✅ Sample applications deployed automatically"
+      - echo "* Kubernetes cluster running with optimized nodes"
+      - echo "* ArgoCD installed with App of Apps pattern"
+      - echo "* Sample applications deployed automatically"
       - echo ""
-      - echo "🌐 Access ArgoCD: task argocd-ui"
-      - echo "📊 Check status: task status"
-      - echo "💰 Cost report: task bill"
+      - echo "Access ArgoCD with 'task argocd-ui'"
+      - echo "Check status with 'task status'"
+      - echo "Cost report with 'task bill'"

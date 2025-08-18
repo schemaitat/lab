@@ -137,7 +137,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/yourusername/iac
+    repoURL: https://github.com/schemaitat/lab.git
     targetRevision: HEAD
     path: argocd/system/my-app
   destination:
@@ -187,7 +187,7 @@ git push
 Update the repository URL in all application manifests:
 ```yaml
 # Replace in all files:
-repoURL: https://github.com/yourusername/iac
+repoURL: https://github.com/schemaitat/lab.git
 ```
 
 ### Domains and Ingress
