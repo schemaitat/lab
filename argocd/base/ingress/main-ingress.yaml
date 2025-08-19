@@ -42,3 +42,11 @@ spec:
             name: cost-dashboard
             port:
               number: 80
+      # Grafana
+      - path: /grafana(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000

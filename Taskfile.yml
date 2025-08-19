@@ -129,6 +129,16 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig=./kubeconfig.yaml
 
+  grafana-ui:
+    desc: "Start port forwarding to Grafana UI"
+    cmds:
+      - |
+        echo "Grafana UI will be available at http://localhost:3000"
+        echo "Username: admin"
+        echo "Password: admin123"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/grafana -n monitoring 3000:3000 --kubeconfig=./kubeconfig.yaml
+
 
   setup-complete:
     desc: "Complete cluster setup with ArgoCD and applications"
@@ -150,6 +160,7 @@ tasks:
       - echo ""
       - echo "Available UIs (after DNS setup):"
       - echo "* Prometheus - https://lab.schemaitat.de/prometheus"
+      - echo "* Grafana - https://lab.schemaitat.de/grafana (admin/admin123)"
       - echo "* Hello World - https://lab.schemaitat.de/hello"
       - echo "* Cost Dashboard - https://lab.schemaitat.de/cost"
       - echo ""
@@ -160,6 +171,7 @@ tasks:
       - echo "Local Port Forwarding (if needed):"
       - echo "* ArgoCD - task argocd-ui (https://localhost:8080)"
       - echo "* Prometheus - task monitoring-ui (http://localhost:9090)"
+      - echo "* Grafana - task grafana-ui (http://localhost:3000)"
       - echo "* Hello World - task demo-app (http://localhost:8081)"
       - echo "* Cost Dashboard - task cost-dashboard (http://localhost:8082)"
       - echo ""
