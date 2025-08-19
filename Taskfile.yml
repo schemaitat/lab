@@ -129,10 +129,6 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig=./kubeconfig.yaml
 
-  nodebalancer-ip:
-    desc: "Get NodeBalancer IP address for DNS configuration"
-    cmds:
-      - scripts/get-nodebalancer-ip.sh
 
   setup-complete:
     desc: "Complete cluster setup with ArgoCD and applications"
@@ -143,12 +139,19 @@ tasks:
       - echo "Complete setup finished!"
       - echo "================================"
       - echo "* Kubernetes cluster running with 2GB nodes"
-      - echo "* ArgoCD installed with App of Apps pattern" 
-      - echo "* NodeBalancer configured for external access"
+      - echo "* ArgoCD installed with App of Apps pattern"
+      - echo "* NGINX ingress with automatic LoadBalancer"
       - echo "* Sample applications deployed automatically"
       - echo ""
-      - echo "🌐 DNS Configuration needed:"
-      - scripts/get-nodebalancer-ip.sh
+      - echo "🌐 External Access:"
+      - echo "* Linode will automatically create a NodeBalancer for ingress"
+      - echo "* Get the LoadBalancer IP - kubectl get svc -n ingress-nginx"
+      - echo "* Point lab.schemaitat.de to that IP address"
+      - echo ""
+      - echo "Available UIs (after DNS setup):"
+      - echo "* Prometheus - https://lab.schemaitat.de/prometheus"
+      - echo "* Hello World - https://lab.schemaitat.de/hello"
+      - echo "* Cost Dashboard - https://lab.schemaitat.de/cost"
       - echo ""
       - echo "ArgoCD Access (use port forwarding):"
       - echo "* task argocd-password (get credentials)"
@@ -163,7 +166,6 @@ tasks:
       - echo "Other commands:"
       - echo "* ArgoCD password - task argocd-password"
       - echo "* Check status - task status"
-      - echo "* Get NodeBalancer IP - scripts/get-nodebalancer-ip.sh"
       - echo "* Cost report - task bill"
   
   k9s:

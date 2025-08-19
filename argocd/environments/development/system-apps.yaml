@@ -16,10 +16,9 @@ spec:
       values: |
         controller:
           service:
-            type: NodePort
-            nodePorts:
-              http: 30080
-              https: 30443
+            type: LoadBalancer
+            annotations:
+              service.beta.kubernetes.io/linode-loadbalancer-throttle: "4"
           resources:
             requests:
               cpu: 100m
