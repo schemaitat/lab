@@ -135,3 +135,11 @@ tasks:
       - echo "Other commands:"
       - echo "* Check status - task status"
       - echo "* Cost report - task bill"
+  
+  k9s:
+    desc: "Start K9s terminal UI"
+    cmds:
+      - |
+        echo "K9s will be available in your terminal"
+        echo "Starting K9s..."
+        k9s --kubeconfig=./kubeconfig.yaml
