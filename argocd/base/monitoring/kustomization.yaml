@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - prometheus.yaml
+  - rbac.yaml
 
 namespace: monitoring
 
