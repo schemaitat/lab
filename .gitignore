@@ -37,7 +37,7 @@ argocd-initial-admin-secret
 .argocd/
 
 # Secrets and Credentials (CRITICAL - Never commit these!)
-*secret*
+# Note: Allow YAML secret manifests for GitOps but block actual secret files
 *credential*
 *token*
 *.pem
