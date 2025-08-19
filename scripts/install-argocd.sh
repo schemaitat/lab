@@ -5,6 +5,9 @@ set -e
 echo "🚀 Installing ArgoCD with App of Apps pattern..."
 echo "=============================================="
 
+# Use local kubeconfig
+export KUBECONFIG=./kubeconfig.yaml
+
 # Check if kubectl is configured
 if ! kubectl cluster-info > /dev/null 2>&1; then
     echo "❌ Error: kubectl is not configured or cluster is not accessible"
