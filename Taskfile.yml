@@ -7,7 +7,7 @@ tasks:
       - scripts/setup-cluster.sh
     
   teardown:
-    desc: "Teardown Kubernetes cluster and destroy all resources"
+    desc: "Teardown Kubernetes cluster and clean up all Linode resources"
     cmds:
       - scripts/teardown-cluster.sh
   
