@@ -33,6 +33,9 @@ export KUBECONFIG=./kubeconfig.yaml
 echo "⏳ Waiting for cluster to be fully ready..."
 sleep 10
 
+# NodeBalancer nodes will be configured manually after setup
+echo "📝 Note: Configure NodeBalancer nodes manually using 'task nodebalancer-ip'"
+
 # Check cluster status
 echo ""
 echo "✅ Cluster Setup Complete!"
