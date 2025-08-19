@@ -129,6 +129,11 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig=./kubeconfig.yaml
 
+  nodebalancer-ip:
+    desc: "Get NodeBalancer IP address for DNS configuration"
+    cmds:
+      - scripts/get-nodebalancer-ip.sh
+
   setup-complete:
     desc: "Complete cluster setup with ArgoCD and applications"
     cmds:
@@ -138,13 +143,12 @@ tasks:
       - echo "Complete setup finished!"
       - echo "================================"
       - echo "* Kubernetes cluster running with 2GB nodes"
-      - echo "* ArgoCD installed with App of Apps pattern"
+      - echo "* ArgoCD installed with App of Apps pattern" 
+      - echo "* NodeBalancer configured for external access"
       - echo "* Sample applications deployed automatically"
       - echo ""
-      - echo "Available UIs (External Access):"
-      - echo "* Prometheus - https://lab.schemaitat.de/prometheus"
-      - echo "* Hello World - https://lab.schemaitat.de/hello"
-      - echo "* Cost Dashboard - https://lab.schemaitat.de/cost"
+      - echo "🌐 DNS Configuration needed:"
+      - scripts/get-nodebalancer-ip.sh
       - echo ""
       - echo "ArgoCD Access (use port forwarding):"
       - echo "* task argocd-password (get credentials)"
@@ -159,6 +163,7 @@ tasks:
       - echo "Other commands:"
       - echo "* ArgoCD password - task argocd-password"
       - echo "* Check status - task status"
+      - echo "* Get NodeBalancer IP - scripts/get-nodebalancer-ip.sh"
       - echo "* Cost report - task bill"
   
   k9s:

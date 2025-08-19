@@ -19,3 +19,18 @@ output "kubeconfig" {
   sensitive   = true
 }
 
+output "nodebalancer_id" {
+  description = "The ID of the NodeBalancer for ingress"
+  value       = linode_nodebalancer.ingress.id
+}
+
+output "nodebalancer_hostname" {
+  description = "The hostname of the NodeBalancer for DNS configuration"
+  value       = linode_nodebalancer.ingress.hostname
+}
+
+output "nodebalancer_ipv4" {
+  description = "The IPv4 address of the NodeBalancer"
+  value       = linode_nodebalancer.ingress.ipv4
+}
+
