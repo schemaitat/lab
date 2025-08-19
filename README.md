@@ -1,6 +1,6 @@
 # Linode Infrastructure as Code
 
-A comprehensive Infrastructure as Code setup for managing Linode Kubernetes Engine (LKE) clusters with automated billing reporting.
+A comprehensive Infrastructure as Code setup for managing Linode Kubernetes Engine (LKE) clusters with ArgoCD GitOps, automated billing reporting, and complete resource lifecycle management.
 
 ## 📁 Project Structure
 
@@ -9,6 +9,16 @@ A comprehensive Infrastructure as Code setup for managing Linode Kubernetes Engi
 ├── README.md                    # This file
 ├── Taskfile.yml                 # Task automation with Task runner
 ├── kubeconfig.yaml             # Kubernetes cluster configuration (generated)
+├── argocd/                     # ArgoCD GitOps configuration
+│   ├── bootstrap/              # App of Apps root application
+│   ├── base/                   # Base application manifests
+│   │   ├── cert-manager/       # SSL certificate management
+│   │   ├── ingress/            # Ingress controller configuration
+│   │   ├── monitoring/         # Prometheus monitoring stack
+│   │   ├── hello-world/        # Demo application
+│   │   └── cost-dashboard/     # Cost monitoring dashboard
+│   └── environments/           # Environment-specific configurations
+│       └── development/        # Development environment apps
 ├── docs/                       # Documentation
 ├── reports/                    # Generated billing reports
 │   ├── bill.pdf               # Latest billing report
@@ -16,7 +26,8 @@ A comprehensive Infrastructure as Code setup for managing Linode Kubernetes Engi
 │   └── resource_chart.png     # Resource distribution chart
 ├── scripts/                    # Automation scripts
 │   ├── setup-cluster.sh       # Cluster setup automation
-│   ├── teardown-cluster.sh    # Cluster destruction
+│   ├── teardown-cluster.sh    # Enhanced cluster destruction with cleanup
+│   ├── install-argocd.sh      # ArgoCD installation script
 │   └── generate_billing_report.py # PDF billing report generator
 └── terraform/                 # Infrastructure configuration
     ├── main.tf                # Main Terraform configuration
@@ -56,9 +67,14 @@ A comprehensive Infrastructure as Code setup for managing Linode Kubernetes Engi
    # Edit terraform/terraform.tfvars with your settings
    ```
 
-3. **Create your cluster:**
+3. **Create your cluster with ArgoCD:**
    ```bash
-   task setup
+   # Complete setup: cluster + ArgoCD + sample applications
+   task setup-complete
+   
+   # Or step by step:
+   task setup           # Create cluster only
+   task install-argocd  # Install ArgoCD with GitOps
    ```
 
 ## 📋 Available Tasks
@@ -68,47 +84,127 @@ Run `task --list` to see all available tasks:
 | Task | Description |
 |------|-------------|
 | `setup` | Setup Kubernetes cluster on Linode |
-| `teardown` | Teardown cluster and destroy all resources |
+| `setup-complete` | Complete setup: cluster + ArgoCD + applications |
+| `install-argocd` | Install ArgoCD with App of Apps pattern |
+| `teardown` | Teardown cluster and clean up all Linode resources |
 | `status` | Check cluster status and show information |
 | `plan` | Show what changes would be applied to infrastructure |
 | `apply` | Apply infrastructure changes |
 | `fresh` | Get completely fresh state (destroy + clean + reinit) |
 | `bill` | Generate comprehensive billing report as PDF |
+| `argocd-ui` | Start port forwarding to ArgoCD UI |
+| `argocd-password` | Get ArgoCD admin credentials |
+| `monitoring-ui` | Start port forwarding to Prometheus UI |
+| `demo-app` | Start port forwarding to Hello World demo |
+| `cost-dashboard` | Start port forwarding to Cost Dashboard |
 | `kubectl` | Run kubectl commands with cluster kubeconfig |
 | `logs` | View logs from a specific pod |
 | `shell` | Get a shell in a pod |
 | `clean` | Clean up local terraform and kubernetes files |
+| `k9s` | Start K9s terminal UI for cluster management |
 
 ### Common Workflows
 
 **Basic cluster management:**
 ```bash
-# Create cluster
-task setup
+# Create cluster with ArgoCD and applications
+task setup-complete
 
 # Check status
 task status
 
+# Access ArgoCD UI
+task argocd-password  # Get credentials
+task argocd-ui        # Start port forwarding to localhost:8080
+
 # Generate billing report
 task bill
 
-# Destroy cluster
+# Destroy cluster (with automatic NodeBalancer cleanup)
 task teardown
+```
+
+**GitOps with ArgoCD:**
+```bash
+# Complete setup with GitOps
+task setup-complete
+
+# Access services
+task argocd-ui          # ArgoCD UI at localhost:8080
+task monitoring-ui      # Prometheus at localhost:9090
+task demo-app          # Hello World at localhost:8081
+task cost-dashboard    # Cost monitoring at localhost:8082
+
+# Get LoadBalancer IP for external access
+task kubectl -- get svc -n ingress-nginx
+
+# Check ArgoCD applications
+task kubectl -- get applications -n argocd
 ```
 
 **Development workflow:**
 ```bash
 # Fresh start
 task fresh
-task setup
+task setup-complete
 
 # Make changes to terraform files
 task plan
 task apply
 
-# Check what's running
-task kubectl -- get pods --all-namespaces
+# Check applications via ArgoCD
+task argocd-ui
+
+# Monitor with K9s
+task k9s
 ```
+
+## 🔄 GitOps with ArgoCD
+
+### App of Apps Pattern
+
+The cluster uses ArgoCD's "App of Apps" pattern for GitOps deployment:
+
+```
+argocd/
+├── bootstrap/root-app.yaml          # Root application that manages all others
+└── environments/development/        # Environment-specific configurations
+    ├── system-apps.yaml            # Infrastructure applications
+    └── demo-apps.yaml              # Demo applications
+```
+
+### Deployed Applications
+
+**System Applications:**
+- **NGINX Ingress Controller** - Traffic routing with automatic LoadBalancer
+- **Cert-Manager** - Automatic SSL certificate management
+- **Prometheus** - Monitoring and metrics collection
+- **Cluster Issuers** - Let's Encrypt SSL certificate issuers
+
+**Demo Applications:**
+- **Hello World** - Simple demo application
+- **Cost Dashboard** - Cost monitoring interface
+
+### External Access
+
+After deployment, applications are accessible via ingress:
+
+```bash
+# Get LoadBalancer IP
+task kubectl -- get svc -n ingress-nginx
+
+# Point lab.schemaitat.de to the LoadBalancer IP, then access:
+# https://lab.schemaitat.de/prometheus   - Prometheus UI
+# https://lab.schemaitat.de/hello       - Hello World demo
+# https://lab.schemaitat.de/cost        - Cost Dashboard
+```
+
+### GitOps Workflow
+
+1. **Automatic Sync** - ArgoCD monitors the Git repository
+2. **Self-Healing** - Automatically corrects configuration drift
+3. **Declarative** - All applications defined as code
+4. **Rollback** - Easy rollback via Git history
 
 ## 💰 Billing & Cost Management
 
@@ -222,6 +318,40 @@ task apply
 task fresh
 ```
 
+## 🧹 Enhanced Resource Cleanup
+
+### Automatic NodeBalancer Cleanup
+
+The teardown script now includes intelligent cleanup of Linode resources:
+
+```bash
+task teardown
+```
+
+**What gets cleaned up automatically:**
+- ✅ **Terraform Resources** - LKE cluster and managed infrastructure
+- ✅ **NodeBalancers** - Automatically created by LoadBalancer services
+- ✅ **CCM Resources** - Cloud Controller Manager created resources
+
+**Cleanup Process:**
+1. **Terraform Destroy** - Removes cluster and managed resources
+2. **NodeBalancer Detection** - Identifies cluster-related NodeBalancers using CCM naming patterns
+3. **Selective Cleanup** - Only removes resources associated with the destroyed cluster
+4. **Resource Inventory** - Lists remaining resources that may need manual cleanup
+
+**Requirements:**
+- `linode-cli` installed and configured for automatic cleanup
+- Without linode-cli, manual cleanup instructions are provided
+
+### Manual Cleanup Check
+
+After teardown, the script checks for:
+- **Block Storage Volumes** - Persistent volumes that may remain
+- **Firewalls** - Network policies that created firewall rules
+- **DNS Records** - Domain records pointing to old IPs
+
+This ensures no surprise billing from orphaned resources!
+
 ## 🛡️ Security Best Practices
 
 1. **API Token Security:**
@@ -272,12 +402,45 @@ pip install linode-cli
 linode-cli configure
 ```
 
+**5. "ArgoCD applications not syncing"**
+```bash
+# Check ArgoCD status
+task kubectl -- get applications -n argocd
+
+# Get ArgoCD server logs
+task kubectl -- logs deployment/argocd-server -n argocd
+
+# Force sync an application
+task kubectl -- patch application app-name -n argocd --type merge -p '{"operation":{"sync":{"revision":"HEAD"}}}'
+```
+
+**6. "LoadBalancer IP pending"**
+```bash
+# Check ingress controller status
+task kubectl -- get svc -n ingress-nginx
+
+# Check NodeBalancer creation in Linode
+linode-cli nodebalancers list
+```
+
+**7. "Can't access external services"**
+```bash
+# Get LoadBalancer external IP
+task kubectl -- get svc -n ingress-nginx
+
+# Update DNS records to point to the LoadBalancer IP
+# Or add to /etc/hosts for testing:
+echo "LOADBALANCER_IP lab.schemaitat.de" | sudo tee -a /etc/hosts
+```
+
 ### Getting Help
 
 - Check task output for specific error messages
 - Verify your Linode API token has sufficient permissions
 - Ensure all prerequisites are installed
 - Check Linode account limits and quotas
+- Monitor ArgoCD UI for application sync status
+- Use `task k9s` for interactive cluster debugging
 
 ## 📊 Monitoring & Observability
 
