@@ -4,5 +4,3 @@ kind: Kustomization
 resources:
 - main-ingress.yaml
 - cross-namespace-services.yaml
-- argocd-path-ingress.yaml
-- argocd-config.yaml
