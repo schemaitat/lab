@@ -90,6 +90,21 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig=./kubeconfig.yaml
 
+  argocd-password:
+    desc: "Get ArgoCD admin password"
+    cmds:
+      - |
+        echo "ArgoCD Login Credentials:"
+        echo "=========================="
+        echo "URL: https://lab.schemaitat.de/argocd"
+        echo "Username: admin"
+        echo -n "Password: "
+        kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" --kubeconfig=./kubeconfig.yaml | base64 -d
+        echo ""
+        echo ""
+        echo "Local access (if needed): https://localhost:8080"
+        echo "Use 'task argocd-ui' for port forwarding"
+
   monitoring-ui:
     desc: "Start port forwarding to Prometheus UI"
     cmds:
@@ -139,6 +154,7 @@ tasks:
       - echo "* Cost Dashboard - task cost-dashboard (http://localhost:8082)"
       - echo ""
       - echo "Other commands:"
+      - echo "* ArgoCD password - task argocd-password"
       - echo "* Check status - task status"
       - echo "* Cost report - task bill"
   
