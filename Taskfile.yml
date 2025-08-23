@@ -1,147 +1,20 @@
 version: '3'
 
+vars:
+  KUBECONFIG: ./kubeconfig.yaml
+  TERRAFORM_DIR: terraform
+
 tasks:
+  # ========================
+  # CLUSTER LIFECYCLE
+  # ========================
   setup:
-    desc: "Setup Kubernetes cluster on Linode"
+    desc: "Create new Kubernetes cluster on Linode"
     cmds:
       - scripts/setup-cluster.sh
-    
-  teardown:
-    desc: "Teardown Kubernetes cluster and clean up all Linode resources"
-    cmds:
-      - scripts/teardown-cluster.sh
-  
-  status:
-    desc: "Check cluster status and show cluster information"
-    cmds:
-      - cd terraform && tofu output
-      - echo ""
-      - echo "Cluster Nodes:"
-      - kubectl get nodes --kubeconfig=./kubeconfig.yaml
-      - echo ""
-      - echo "System Pods:"
-      - kubectl get pods -n kube-system --kubeconfig=./kubeconfig.yaml
-    
-  plan:
-    desc: "Show what changes would be applied to infrastructure"
-    cmds:
-      - cd terraform && tofu plan
-      
-  apply:
-    desc: "Apply infrastructure changes"
-    cmds:
-      - cd terraform && tofu apply
-      
-  kubectl:
-    desc: "Run kubectl commands with the cluster kubeconfig"
-    cmds:
-      - kubectl --kubeconfig=./kubeconfig.yaml {{.CLI_ARGS}}
-    
-  logs:
-    desc: "View logs from a specific pod"
-    cmds:
-      - kubectl logs {{.CLI_ARGS}} --kubeconfig=./kubeconfig.yaml
-      
-  shell:
-    desc: "Get a shell in a pod"
-    cmds:
-      - kubectl exec -it {{.CLI_ARGS}} --kubeconfig=./kubeconfig.yaml -- /bin/bash
-
-  clean:
-    desc: "Clean up local terraform and kubernetes files"
-    cmds:
-      - rm -f kubeconfig.yaml
-      - rm -f terraform/terraform.tfstate*
-      - rm -rf terraform/.terraform/
-      - echo "Local files cleaned up"
-
-  fresh:
-    desc: "Get a completely fresh state by destroying cluster and cleaning all files"
-    cmds:
-      - echo "Getting fresh state..."
-      - echo "1. Destroying existing cluster (if any)..."
-      - cd terraform && tofu destroy -auto-approve || echo "No existing infrastructure to destroy"
-      - echo "2. Cleaning up all local files..."
-      - rm -f kubeconfig.yaml
-      - rm -f terraform/terraform.tfstate*
-      - rm -rf terraform/.terraform/
-      - echo "3. Reinitializing Terraform..."
-      - cd terraform && tofu init
-      - echo ""
-      - echo "Fresh state achieved!"
-      - echo "Run 'task setup' to create a new cluster"
-
-  bill:
-    desc: "Generate Linode billing report as bill.pdf"
-    cmds:
-      - uv run scripts/generate_billing_report.py
-
-  install-argocd:
-    desc: "Install ArgoCD with App of Apps pattern"
-    cmds:
-      - scripts/install-argocd.sh
-
-  argocd-ui:
-    desc: "Start port forwarding to ArgoCD UI"
-    cmds:
-      - |
-        echo "ArgoCD UI will be available at https://localhost:8080"
-        echo "Username: admin"
-        echo "Starting port forwarding..."
-        kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig=./kubeconfig.yaml
-
-  argocd-password:
-    desc: "Get ArgoCD admin password"
-    cmds:
-      - |
-        echo "ArgoCD Login Credentials:"
-        echo "=========================="
-        echo "URL: https://lab.schemaitat.de/argocd"
-        echo "Username: admin"
-        echo -n "Password: "
-        kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" --kubeconfig=./kubeconfig.yaml | base64 -d
-        echo ""
-        echo ""
-        echo "Local access (if needed): https://localhost:8080"
-        echo "Use 'task argocd-ui' for port forwarding"
-
-  monitoring-ui:
-    desc: "Start port forwarding to Prometheus UI"
-    cmds:
-      - |
-        echo "Prometheus UI will be available at http://localhost:9090"
-        echo "Starting port forwarding..."
-        kubectl port-forward svc/prometheus -n monitoring 9090:9090 --kubeconfig=./kubeconfig.yaml
-
-  demo-app:
-    desc: "Start port forwarding to Hello World demo app"
-    cmds:
-      - |
-        echo "Hello World demo app will be available at http://localhost:8081"
-        echo "Starting port forwarding..."
-        kubectl port-forward svc/hello-world -n demo 8081:80 --kubeconfig=./kubeconfig.yaml
-
-  cost-dashboard:
-    desc: "Start port forwarding to Cost Dashboard"
-    cmds:
-      - |
-        echo "Cost Dashboard will be available at http://localhost:8082"
-        echo "Starting port forwarding..."
-        kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig=./kubeconfig.yaml
-
-  grafana-ui:
-    desc: "Start port forwarding to Grafana UI"
-    cmds:
-      - |
-        echo "Grafana UI will be available at http://localhost:3000"
-        echo "Username: admin"
-        echo "Password: admin123"
-        echo "Starting port forwarding..."
-        kubectl port-forward svc/grafana -n monitoring 3000:3000 --kubeconfig=./kubeconfig.yaml
-
 
   setup-complete:
-    desc: "Complete cluster setup with ArgoCD and applications"
+    desc: "Complete setup: cluster + ArgoCD + applications"
     cmds:
       - task: setup
       - task: install-argocd
@@ -179,11 +52,164 @@ tasks:
       - echo "* ArgoCD password - task argocd-password"
       - echo "* Check status - task status"
       - echo "* Cost report - task bill"
-  
+
+  teardown:
+    desc: "Destroy cluster and clean up all Linode resources"
+    cmds:
+      - scripts/teardown-cluster.sh
+
+  fresh:
+    desc: "Reset to clean state: destroy cluster + clean files"
+    cmds:
+      - echo "Getting fresh state..."
+      - echo "1. Destroying existing cluster (if any)..."
+      - cd {{.TERRAFORM_DIR}} && tofu destroy -auto-approve || echo "No existing infrastructure to destroy"
+      - echo "2. Cleaning up all local files..."
+      - rm -f {{.KUBECONFIG}}
+      - rm -f {{.TERRAFORM_DIR}}/terraform.tfstate*
+      - rm -rf {{.TERRAFORM_DIR}}/.terraform/
+      - echo "3. Reinitializing Terraform..."
+      - cd {{.TERRAFORM_DIR}} && tofu init
+      - echo ""
+      - echo "Fresh state achieved!"
+      - echo "Run 'task setup' to create a new cluster"
+
+  # ========================
+  # INFRASTRUCTURE MANAGEMENT
+  # ========================
+
+  status:
+    desc: "Show cluster status and information"
+    cmds:
+      - cd {{.TERRAFORM_DIR}} && tofu output
+      - echo ""
+      - echo "Cluster Nodes:"
+      - kubectl get nodes --kubeconfig={{.KUBECONFIG}}
+      - echo ""
+      - echo "System Pods:"
+      - kubectl get pods -n kube-system --kubeconfig={{.KUBECONFIG}}
+
+  plan:
+    desc: "Preview infrastructure changes (tofu plan)"
+    cmds:
+      - cd {{.TERRAFORM_DIR}} && tofu plan
+
+  apply:
+    desc: "Apply infrastructure changes (tofu apply)"
+    cmds:
+      - cd {{.TERRAFORM_DIR}} && tofu apply
+
+  clean:
+    desc: "Clean local terraform and kubernetes files"
+    cmds:
+      - rm -f {{.KUBECONFIG}}
+      - rm -f {{.TERRAFORM_DIR}}/terraform.tfstate*
+      - rm -rf {{.TERRAFORM_DIR}}/.terraform/
+      - echo "Local files cleaned up"
+
+  # ========================
+  # KUBERNETES TOOLS
+  # ========================
+
+  kubectl:
+    desc: "Run kubectl with cluster kubeconfig"
+    cmds:
+      - kubectl --kubeconfig={{.KUBECONFIG}} {{.CLI_ARGS}}
+
+  logs:
+    desc: "View pod logs"
+    cmds:
+      - kubectl logs {{.CLI_ARGS}} --kubeconfig={{.KUBECONFIG}}
+
+  shell:
+    desc: "Get shell in pod"
+    cmds:
+      - kubectl exec -it {{.CLI_ARGS}} --kubeconfig={{.KUBECONFIG}} -- /bin/bash
+
   k9s:
     desc: "Start K9s terminal UI"
     cmds:
       - |
         echo "K9s will be available in your terminal"
         echo "Starting K9s..."
-        k9s --kubeconfig=./kubeconfig.yaml
+        k9s --kubeconfig={{.KUBECONFIG}}
+
+  # ========================
+  # ARGOCD MANAGEMENT
+  # ========================
+
+  install-argocd:
+    desc: "Install ArgoCD with App of Apps pattern"
+    cmds:
+      - scripts/install-argocd.sh
+
+  argocd-password:
+    desc: "Get ArgoCD admin credentials"
+    cmds:
+      - |
+        echo "ArgoCD Login Credentials:"
+        echo "=========================="
+        echo "URL: https://lab.schemaitat.de/argocd"
+        echo "Username: admin"
+        echo -n "Password: "
+        kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" --kubeconfig={{.KUBECONFIG}} | base64 -d
+        echo ""
+        echo ""
+        echo "Local access (if needed): https://localhost:8080"
+        echo "Use 'task argocd-ui' for port forwarding"
+
+  argocd-ui:
+    desc: "Port forward to ArgoCD UI (https://localhost:8080)"
+    cmds:
+      - |
+        echo "ArgoCD UI will be available at https://localhost:8080"
+        echo "Username: admin"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig={{.KUBECONFIG}}
+
+  # ========================
+  # MONITORING & UI ACCESS
+  # ========================
+
+  monitoring-ui:
+    desc: "Port forward to Prometheus (http://localhost:9090)"
+    cmds:
+      - |
+        echo "Prometheus UI will be available at http://localhost:9090"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/prometheus -n monitoring 9090:9090 --kubeconfig={{.KUBECONFIG}}
+
+  grafana-ui:
+    desc: "Port forward to Grafana (http://localhost:3000)"
+    cmds:
+      - |
+        echo "Grafana UI will be available at http://localhost:3000"
+        echo "Username: admin"
+        echo "Password: admin123"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/grafana -n monitoring 3000:3000 --kubeconfig={{.KUBECONFIG}}
+
+  demo-app:
+    desc: "Port forward to Hello World demo (http://localhost:8081)"
+    cmds:
+      - |
+        echo "Hello World demo app will be available at http://localhost:8081"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/hello-world -n demo 8081:80 --kubeconfig={{.KUBECONFIG}}
+
+  cost-dashboard:
+    desc: "Port forward to Cost Dashboard (http://localhost:8082)"
+    cmds:
+      - |
+        echo "Cost Dashboard will be available at http://localhost:8082"
+        echo "Starting port forwarding..."
+        kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig={{.KUBECONFIG}}
+
+  # ========================
+  # UTILITIES
+  # ========================
+
+  bill:
+    desc: "Generate Linode billing report (bill.pdf)"
+    cmds:
+      - uv run scripts/generate_billing_report.py
