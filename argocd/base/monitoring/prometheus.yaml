@@ -86,6 +86,34 @@ data:
       - source_labels: [__meta_kubernetes_pod_name]
         action: replace
         target_label: kubernetes_pod_name
+    
+    # Scrape Fluent Bit metrics
+    - job_name: 'fluent-bit'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+        action: keep
+        regex: fluent-bit-logging
+      - source_labels: [__address__]
+        action: replace
+        regex: ([^:]+)(?::\d+)?
+        replacement: $1:2020
+        target_label: __address__
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+    
+    # Scrape Loki metrics
+    - job_name: 'loki'
+      static_configs:
+      - targets: ['loki.logging.svc.cluster.local:3100']
+        labels:
+          job: 'loki'
+          namespace: 'logging'
 ---
 apiVersion: apps/v1
 kind: Deployment

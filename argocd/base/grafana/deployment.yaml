@@ -73,6 +73,9 @@ spec:
         - mountPath: /grafana-dashboard-definitions/0/cluster-overview
           name: grafana-dashboard-cluster-overview
           readOnly: false
+        - mountPath: /grafana-dashboard-definitions/0/logging
+          name: grafana-dashboard-logs
+          readOnly: false
       volumes:
       - name: grafana-storage
         emptyDir: {}
@@ -88,3 +91,7 @@ spec:
         configMap:
           defaultMode: 420
           name: grafana-dashboard-cluster-overview
+      - name: grafana-dashboard-logs
+        configMap:
+          defaultMode: 420
+          name: grafana-dashboard-logs
