@@ -10,7 +10,6 @@ data:
         Flush 1
         Log_Level info
         Parsers_File parsers.conf
-        Plugins_File plugins.conf
         HTTP_Server On
         HTTP_Listen 0.0.0.0
         HTTP_Port 2020
@@ -48,7 +47,7 @@ data:
         Host loki.logging.svc.cluster.local
         Port 3100
         Labels job=fluentbit
-        LabelKeys kubernetes_pod_name,kubernetes_container_name,kubernetes_namespace_name
+        label_keys kubernetes_pod_name,kubernetes_container_name,kubernetes_namespace_name
         LineFormat json
         LogLevel info
 
@@ -80,6 +79,3 @@ data:
         Format regex
         Regex (?<tag>[^.]+)?\.?(?<pod_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-(?<docker_id>[a-z0-9]{64})\.log$
 
-  plugins.conf: |
-    [PLUGINS]
-        Path /fluent-bit/bin/out_loki.so

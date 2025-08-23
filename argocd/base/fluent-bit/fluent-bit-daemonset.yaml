@@ -34,7 +34,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: fluent-bit
-        image: grafana/fluent-bit-plugin-loki:2.9.0-amd64
+        image: fluent/fluent-bit:2.2.2
         imagePullPolicy: Always
         ports:
           - containerPort: 2020
