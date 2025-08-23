@@ -48,7 +48,7 @@ data:
         Port 3100
         Labels job=fluentbit
         label_keys kubernetes_pod_name,kubernetes_container_name,kubernetes_namespace_name
-        LineFormat json
+        line_format json
         LogLevel info
 
     [OUTPUT]
@@ -57,7 +57,7 @@ data:
         Host loki.logging.svc.cluster.local
         Port 3100
         Labels job=fluentbit,component=kubelet
-        LineFormat key_value
+        line_format key_value
 
   parsers.conf: |
     [PARSER]
