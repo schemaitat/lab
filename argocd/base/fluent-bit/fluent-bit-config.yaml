@@ -47,7 +47,7 @@ data:
         Host loki.logging.svc.cluster.local
         Port 3100
         Labels job=fluentbit
-        label_keys kubernetes_pod_name,kubernetes_container_name,kubernetes_namespace_name
+        label_keys $kubernetes_pod_name,$kubernetes_container_name,$kubernetes_namespace_name
         line_format json
 
     [OUTPUT]
