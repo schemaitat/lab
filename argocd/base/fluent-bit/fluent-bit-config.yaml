@@ -46,8 +46,7 @@ data:
         Match kube.*
         Host loki.logging.svc.cluster.local
         Port 3100
-        Labels job=fluentbit
-        auto_kubernetes_labels on
+        Labels job=fluentbit,cluster=k8s
         line_format json
 
     [OUTPUT]
