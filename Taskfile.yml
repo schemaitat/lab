@@ -8,57 +8,45 @@ tasks:
   # ========================
   # CLUSTER LIFECYCLE
   # ========================
-  setup:
+  cluster:setup:
     desc: "Create new Kubernetes cluster on Linode"
     cmds:
       - scripts/setup-cluster.sh
 
-  setup-complete:
+  cluster:setup-complete:
     desc: "Complete setup: cluster + ArgoCD + applications"
     cmds:
-      - task: setup
-      - task: install-argocd
+      - task: cluster:setup
+      - task: argocd:install
       - echo ""
       - echo "Complete setup finished!"
       - echo "================================"
       - echo "* Kubernetes cluster running with 2GB nodes"
       - echo "* ArgoCD installed with App of Apps pattern"
-      - echo "* NGINX ingress with automatic LoadBalancer"
-      - echo "* Sample applications deployed automatically"
+      - echo "* All applications deployed via port-forwarding"
       - echo ""
-      - echo "🌐 External Access:"
-      - echo "* Linode will automatically create a NodeBalancer for ingress"
-      - echo "* Get the LoadBalancer IP - kubectl get svc -n ingress-nginx"
-      - echo "* Point lab.schemaitat.de to that IP address"
+      - echo "📊 Available UIs (local access only):"
+      - echo "* ArgoCD - task ui:argocd (https://localhost:8080)"
+      - echo "* Prometheus - task ui:prometheus (http://localhost:9090)"
+      - echo "* Grafana - task ui:grafana (http://localhost:3000)"
+      - echo "* Loki - task ui:loki (http://localhost:3100)"
+      - echo "* Hello World - task ui:hello (http://localhost:8081)"
+      - echo "* Cost Dashboard - task ui:cost (http://localhost:8082)"
       - echo ""
-      - echo "Available UIs (after DNS setup):"
-      - echo "* Prometheus - https://lab.schemaitat.de/prometheus"
-      - echo "* Grafana - https://lab.schemaitat.de/grafana (admin/admin123)"
-      - echo "* Hello World - https://lab.schemaitat.de/hello"
-      - echo "* Cost Dashboard - https://lab.schemaitat.de/cost"
+      - echo "🔐 Authentication:"
+      - echo "* ArgoCD password - task auth:argocd"
+      - echo "* Grafana - admin/admin123"
       - echo ""
-      - echo "ArgoCD Access (use port forwarding):"
-      - echo "* task argocd-password (get credentials)"
-      - echo "* task argocd-ui (start port forwarding to localhost:8080)"
-      - echo ""
-      - echo "Local Port Forwarding (if needed):"
-      - echo "* ArgoCD - task argocd-ui (https://localhost:8080)"
-      - echo "* Prometheus - task monitoring-ui (http://localhost:9090)"
-      - echo "* Grafana - task grafana-ui (http://localhost:3000)"
-      - echo "* Hello World - task demo-app (http://localhost:8081)"
-      - echo "* Cost Dashboard - task cost-dashboard (http://localhost:8082)"
-      - echo ""
-      - echo "Other commands:"
-      - echo "* ArgoCD password - task argocd-password"
-      - echo "* Check status - task status"
-      - echo "* Cost report - task bill"
+      - echo "📈 Other commands:"
+      - echo "* Check status - task cluster:status"
+      - echo "* Cost report - task reports:bill"
 
-  teardown:
+  cluster:teardown:
     desc: "Destroy cluster and clean up all Linode resources"
     cmds:
       - scripts/teardown-cluster.sh
 
-  fresh:
+  cluster:fresh:
     desc: "Reset to clean state: destroy cluster + clean files"
     cmds:
       - echo "Getting fresh state..."
@@ -72,13 +60,9 @@ tasks:
       - cd {{.TERRAFORM_DIR}} && tofu init
       - echo ""
       - echo "Fresh state achieved!"
-      - echo "Run 'task setup' to create a new cluster"
+      - echo "Run 'task cluster:setup' to create a new cluster"
 
-  # ========================
-  # INFRASTRUCTURE MANAGEMENT
-  # ========================
-
-  status:
+  cluster:status:
     desc: "Show cluster status and information"
     cmds:
       - cd {{.TERRAFORM_DIR}} && tofu output
@@ -89,17 +73,20 @@ tasks:
       - echo "System Pods:"
       - kubectl get pods -n kube-system --kubeconfig={{.KUBECONFIG}}
 
-  plan:
+  # ========================
+  # INFRASTRUCTURE MANAGEMENT
+  # ========================
+  infra:plan:
     desc: "Preview infrastructure changes (tofu plan)"
     cmds:
       - cd {{.TERRAFORM_DIR}} && tofu plan
 
-  apply:
+  infra:apply:
     desc: "Apply infrastructure changes (tofu apply)"
     cmds:
       - cd {{.TERRAFORM_DIR}} && tofu apply
 
-  clean:
+  infra:clean:
     desc: "Clean local terraform and kubernetes files"
     cmds:
       - rm -f {{.KUBECONFIG}}
@@ -110,23 +97,22 @@ tasks:
   # ========================
   # KUBERNETES TOOLS
   # ========================
-
-  kubectl:
+  k8s:kubectl:
     desc: "Run kubectl with cluster kubeconfig"
     cmds:
       - kubectl --kubeconfig={{.KUBECONFIG}} {{.CLI_ARGS}}
 
-  logs:
+  k8s:logs:
     desc: "View pod logs"
     cmds:
       - kubectl logs {{.CLI_ARGS}} --kubeconfig={{.KUBECONFIG}}
 
-  shell:
+  k8s:shell:
     desc: "Get shell in pod"
     cmds:
       - kubectl exec -it {{.CLI_ARGS}} --kubeconfig={{.KUBECONFIG}} -- /bin/bash
 
-  k9s:
+  k8s:k9s:
     desc: "Start K9s terminal UI"
     cmds:
       - |
@@ -137,41 +123,36 @@ tasks:
   # ========================
   # ARGOCD MANAGEMENT
   # ========================
-
-  install-argocd:
+  argocd:install:
     desc: "Install ArgoCD with App of Apps pattern"
     cmds:
       - scripts/install-argocd.sh
 
-  argocd-password:
+  auth:argocd:
     desc: "Get ArgoCD admin credentials"
     cmds:
       - |
         echo "ArgoCD Login Credentials:"
         echo "=========================="
-        echo "URL: https://lab.schemaitat.de/argocd"
+        echo "URL: https://localhost:8080 (use task ui:argocd)"
         echo "Username: admin"
         echo -n "Password: "
         kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" --kubeconfig={{.KUBECONFIG}} | base64 -d
         echo ""
-        echo ""
-        echo "Local access (if needed): https://localhost:8080"
-        echo "Use 'task argocd-ui' for port forwarding"
 
-  argocd-ui:
+  # ========================
+  # UI ACCESS (PORT FORWARDING)
+  # ========================
+  ui:argocd:
     desc: "Port forward to ArgoCD UI (https://localhost:8080)"
     cmds:
       - |
         echo "ArgoCD UI will be available at https://localhost:8080"
-        echo "Username: admin"
+        echo "Username: admin (get password with: task auth:argocd)"
         echo "Starting port forwarding..."
         kubectl port-forward svc/argocd-server -n argocd 8080:443 --kubeconfig={{.KUBECONFIG}}
 
-  # ========================
-  # MONITORING & UI ACCESS
-  # ========================
-
-  monitoring-ui:
+  ui:prometheus:
     desc: "Port forward to Prometheus (http://localhost:9090)"
     cmds:
       - |
@@ -179,7 +160,7 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/prometheus -n monitoring 9090:9090 --kubeconfig={{.KUBECONFIG}}
 
-  grafana-ui:
+  ui:grafana:
     desc: "Port forward to Grafana (http://localhost:3000)"
     cmds:
       - |
@@ -190,7 +171,7 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/grafana -n monitoring 3000:3000 --kubeconfig={{.KUBECONFIG}}
 
-  loki-ui:
+  ui:loki:
     desc: "Port forward to Loki (http://localhost:3100)"
     cmds:
       - |
@@ -199,7 +180,7 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/loki -n logging 3100:3100 --kubeconfig={{.KUBECONFIG}}
 
-  demo-app:
+  ui:hello:
     desc: "Port forward to Hello World demo (http://localhost:8081)"
     cmds:
       - |
@@ -207,7 +188,7 @@ tasks:
         echo "Starting port forwarding..."
         kubectl port-forward svc/hello-world -n demo 8081:80 --kubeconfig={{.KUBECONFIG}}
 
-  cost-dashboard:
+  ui:cost:
     desc: "Port forward to Cost Dashboard (http://localhost:8082)"
     cmds:
       - |
@@ -216,10 +197,117 @@ tasks:
         kubectl port-forward svc/cost-dashboard -n cost-monitoring 8082:80 --kubeconfig={{.KUBECONFIG}}
 
   # ========================
-  # UTILITIES
+  # REPORTS & UTILITIES
   # ========================
-
-  bill:
+  reports:bill:
     desc: "Generate Linode billing report (bill.pdf)"
     cmds:
       - uv run scripts/generate_billing_report.py
+
+  # ========================
+  # LEGACY COMPATIBILITY
+  # ========================
+  setup:
+    desc: "Legacy alias for cluster:setup"
+    cmds:
+      - task: cluster:setup
+
+  setup-complete:
+    desc: "Legacy alias for cluster:setup-complete"
+    cmds:
+      - task: cluster:setup-complete
+
+  teardown:
+    desc: "Legacy alias for cluster:teardown"
+    cmds:
+      - task: cluster:teardown
+
+  fresh:
+    desc: "Legacy alias for cluster:fresh"
+    cmds:
+      - task: cluster:fresh
+
+  status:
+    desc: "Legacy alias for cluster:status"
+    cmds:
+      - task: cluster:status
+
+  plan:
+    desc: "Legacy alias for infra:plan"
+    cmds:
+      - task: infra:plan
+
+  apply:
+    desc: "Legacy alias for infra:apply"
+    cmds:
+      - task: infra:apply
+
+  clean:
+    desc: "Legacy alias for infra:clean"
+    cmds:
+      - task: infra:clean
+
+  kubectl:
+    desc: "Legacy alias for k8s:kubectl"
+    cmds:
+      - task: k8s:kubectl
+
+  logs:
+    desc: "Legacy alias for k8s:logs"
+    cmds:
+      - task: k8s:logs
+
+  shell:
+    desc: "Legacy alias for k8s:shell"
+    cmds:
+      - task: k8s:shell
+
+  k9s:
+    desc: "Legacy alias for k8s:k9s"
+    cmds:
+      - task: k8s:k9s
+
+  install-argocd:
+    desc: "Legacy alias for argocd:install"
+    cmds:
+      - task: argocd:install
+
+  argocd-password:
+    desc: "Legacy alias for auth:argocd"
+    cmds:
+      - task: auth:argocd
+
+  argocd-ui:
+    desc: "Legacy alias for ui:argocd"
+    cmds:
+      - task: ui:argocd
+
+  monitoring-ui:
+    desc: "Legacy alias for ui:prometheus"
+    cmds:
+      - task: ui:prometheus
+
+  grafana-ui:
+    desc: "Legacy alias for ui:grafana"
+    cmds:
+      - task: ui:grafana
+
+  loki-ui:
+    desc: "Legacy alias for ui:loki"
+    cmds:
+      - task: ui:loki
+
+  demo-app:
+    desc: "Legacy alias for ui:hello"
+    cmds:
+      - task: ui:hello
+
+  cost-dashboard:
+    desc: "Legacy alias for ui:cost"
+    cmds:
+      - task: ui:cost
+
+  bill:
+    desc: "Legacy alias for reports:bill"
+    cmds:
+      - task: reports:bill
