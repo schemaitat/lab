@@ -17,12 +17,7 @@ rules:
   - services
   - endpoints
   - pods
-  - ingresses
   - configmaps
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["extensions", "networking.k8s.io"]
-  resources:
-  - ingresses
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
   resources:

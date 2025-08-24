@@ -37,11 +37,9 @@ spec:
   description: Default project for all applications
   sourceRepos:
   - 'https://github.com/schemaitat/lab.git'
-  - 'https://helm.nginx.com/stable'
   - 'https://prometheus-community.github.io/helm-charts'
   - 'https://grafana.github.io/helm-charts'
   - 'https://charts.jetstack.io'
-  - 'https://kubernetes.github.io/ingress-nginx'
   destinations:
   - namespace: '*'
     server: https://kubernetes.default.svc
@@ -54,8 +52,6 @@ spec:
     kind: ClusterRoleBinding
   - group: 'apiextensions.k8s.io'
     kind: CustomResourceDefinition
-  - group: 'networking.k8s.io'
-    kind: IngressClass
   - group: 'admissionregistration.k8s.io'
     kind: ValidatingWebhookConfiguration
   - group: 'admissionregistration.k8s.io'
@@ -83,8 +79,6 @@ spec:
     kind: Job
   - group: 'batch'
     kind: CronJob
-  - group: 'networking.k8s.io'
-    kind: Ingress
   - group: 'networking.k8s.io'
     kind: NetworkPolicy
   - group: 'argoproj.io'
