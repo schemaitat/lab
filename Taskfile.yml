@@ -4,6 +4,9 @@ vars:
   KUBECONFIG: ./kubeconfig.yaml
   TERRAFORM_DIR: terraform
 
+env:
+  KUBECONFIG: ./kubeconfig.yaml
+
 tasks:
   # ========================
   # CLUSTER LIFECYCLE
@@ -204,110 +207,3 @@ tasks:
     cmds:
       - uv run scripts/generate_billing_report.py
 
-  # ========================
-  # LEGACY COMPATIBILITY
-  # ========================
-  setup:
-    desc: "Legacy alias for cluster:setup"
-    cmds:
-      - task: cluster:setup
-
-  setup-complete:
-    desc: "Legacy alias for cluster:setup-complete"
-    cmds:
-      - task: cluster:setup-complete
-
-  teardown:
-    desc: "Legacy alias for cluster:teardown"
-    cmds:
-      - task: cluster:teardown
-
-  fresh:
-    desc: "Legacy alias for cluster:fresh"
-    cmds:
-      - task: cluster:fresh
-
-  status:
-    desc: "Legacy alias for cluster:status"
-    cmds:
-      - task: cluster:status
-
-  plan:
-    desc: "Legacy alias for infra:plan"
-    cmds:
-      - task: infra:plan
-
-  apply:
-    desc: "Legacy alias for infra:apply"
-    cmds:
-      - task: infra:apply
-
-  clean:
-    desc: "Legacy alias for infra:clean"
-    cmds:
-      - task: infra:clean
-
-  kubectl:
-    desc: "Legacy alias for k8s:kubectl"
-    cmds:
-      - task: k8s:kubectl
-
-  logs:
-    desc: "Legacy alias for k8s:logs"
-    cmds:
-      - task: k8s:logs
-
-  shell:
-    desc: "Legacy alias for k8s:shell"
-    cmds:
-      - task: k8s:shell
-
-  k9s:
-    desc: "Legacy alias for k8s:k9s"
-    cmds:
-      - task: k8s:k9s
-
-  install-argocd:
-    desc: "Legacy alias for argocd:install"
-    cmds:
-      - task: argocd:install
-
-  argocd-password:
-    desc: "Legacy alias for auth:argocd"
-    cmds:
-      - task: auth:argocd
-
-  argocd-ui:
-    desc: "Legacy alias for ui:argocd"
-    cmds:
-      - task: ui:argocd
-
-  monitoring-ui:
-    desc: "Legacy alias for ui:prometheus"
-    cmds:
-      - task: ui:prometheus
-
-  grafana-ui:
-    desc: "Legacy alias for ui:grafana"
-    cmds:
-      - task: ui:grafana
-
-  loki-ui:
-    desc: "Legacy alias for ui:loki"
-    cmds:
-      - task: ui:loki
-
-  demo-app:
-    desc: "Legacy alias for ui:hello"
-    cmds:
-      - task: ui:hello
-
-  cost-dashboard:
-    desc: "Legacy alias for ui:cost"
-    cmds:
-      - task: ui:cost
-
-  bill:
-    desc: "Legacy alias for reports:bill"
-    cmds:
-      - task: reports:bill
